@@ -1,0 +1,332 @@
+
+<div style="background:#0f172a;border-radius:16px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+  <div style="display:flex;align-items:center;min-height:430px;padding:1.75rem 2rem;gap:2rem;">
+    <div style="flex:1;max-width:255px;">
+      <div id="rr-tag" style="font-size:10px;color:#60a5fa;letter-spacing:0.1em;font-weight:600;margin-bottom:6px;text-transform:uppercase;opacity:0;transition:opacity 0.45s;"></div>
+      <div id="rr-head" style="font-size:22px;font-weight:500;color:#f1f5f9;line-height:1.35;margin:0 0 10px;opacity:0;transition:opacity 0.45s 0.1s;"></div>
+      <div id="rr-sub" style="font-size:13px;color:#94a3b8;line-height:1.65;margin:0;opacity:0;transition:opacity 0.45s 0.2s;"></div>
+    </div>
+    <div style="width:192px;background:#111;border-radius:38px;border:2px solid #2a2a2a;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 7px #111827;">
+      <div style="height:30px;background:#111;display:flex;align-items:center;justify-content:center;position:relative;">
+        <div style="width:55px;height:4px;background:#2a2a2a;border-radius:2px;"></div>
+        <span style="position:absolute;right:14px;font-size:7px;color:#555;">9:41</span>
+      </div>
+      <div id="rr-screen" style="height:358px;overflow:hidden;background:#f1f5f9;position:relative;transition:opacity 0.35s;"></div>
+      <div style="height:28px;background:#111;display:flex;align-items:center;justify-content:center;">
+        <div style="width:66px;height:4px;background:#2a2a2a;border-radius:2px;"></div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 2rem 1.25rem;display:flex;align-items:center;gap:12px;">
+    <div style="flex:1;height:2px;background:#1e293b;border-radius:1px;overflow:hidden;">
+      <div id="rr-prog" style="height:100%;background:#3b82f6;width:0%;transition:width 0.15s linear;"></div>
+    </div>
+    <span id="rr-lbl" style="font-size:10px;color:#475569;min-width:32px;text-align:right;"></span>
+    <button onclick="rrPlay()" style="font-size:11px;color:#60a5fa;background:none;border:none;cursor:pointer;padding:2px 6px;">↺ Restart</button>
+  </div>
+</div>
+
+<script>
+const APP_BG='#f1f5f9',WHITE='white',BLUE='#2563eb',LBLUE='#eff6ff',DARK='#111827',GRAY='#6b7280',LGRAY='#f3f4f6',BORD='#e2e8f0';
+const CLEAN_BG='#dcfce7',CLEAN_T='#15803d',DIRTY_BG='#fee2e2',DIRTY_T='#dc2626',MAINT_BG='#fef3c7',MAINT_T='#b45309';
+
+function nav(a){
+  const items=[['🛏','Rooms','rooms'],['🔧','Issues','issues'],['📦','Storage','storage'],['📋','Log','log'],['⚙️','Settings','settings']];
+  return `<div style="position:absolute;bottom:0;left:0;right:0;background:white;border-top:0.5px solid ${BORD};display:flex;height:42px;z-index:10;">${items.map(([ic,lb,id])=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;"><span style="font-size:10px;">${ic}</span><span style="font-size:6.5px;color:${id===a?BLUE:'#94a3b8'};font-weight:${id===a?'700':'400'};">${lb}</span></div>`).join('')}</div>`;
+}
+function mgrHead(){
+  return `<div style="background:white;padding:7px 10px 5px;border-bottom:0.5px solid ${BORD};display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:11px;font-weight:700;color:${DARK};">Hotel Indigo</div><div style="font-size:7.5px;color:${GRAY};">Manager · Nathaniel</div></div><span style="font-size:11px;">⚙️</span></div>`;
+}
+function stats(tot,cl,di,ip){
+  return `<div style="padding:6px 8px;display:flex;gap:4px;"><div style="background:${DARK};border-radius:8px;padding:5px 7px;text-align:center;"><div style="font-size:13px;font-weight:700;color:white;">${tot}</div><div style="font-size:6px;color:#9ca3af;">TOTAL</div></div><div style="background:white;border-radius:8px;padding:5px;text-align:center;flex:1;border:0.5px solid ${BORD};"><div style="font-size:12px;font-weight:600;color:${DARK};">${cl}</div><div style="font-size:6px;color:${GRAY};">CLEAN</div></div><div style="background:white;border-radius:8px;padding:5px;text-align:center;flex:1;border:0.5px solid ${BORD};"><div style="font-size:12px;font-weight:600;color:${DARK};">${di}</div><div style="font-size:6px;color:${GRAY};">DIRTY</div></div><div style="background:white;border-radius:8px;padding:5px;text-align:center;flex:1;border:0.5px solid ${BORD};"><div style="font-size:12px;font-weight:600;color:${DARK};">${ip}</div><div style="font-size:6px;color:${GRAY};">IN PROG</div></div></div>`;
+}
+function tabs(opts,active){
+  return `<div style="display:flex;gap:0;background:${LGRAY};border-radius:8px;padding:2px;margin:0 8px 6px;">${opts.map(o=>`<div style="flex:1;text-align:center;padding:4px 2px;border-radius:6px;font-size:8px;font-weight:500;background:${o===active?WHITE:'transparent'};color:${o===active?DARK:GRAY};border:${o===active?`0.5px solid ${BORD}`:'none'};">${o}</div>`).join('')}</div>`;
+}
+function badge(txt,bg,tc){return `<span style="background:${bg};color:${tc};font-size:7px;padding:2px 5px;border-radius:10px;font-weight:500;">${txt}</span>`;}
+function dot(color){return `<span style="width:6px;height:6px;background:${color};border-radius:50%;display:inline-block;"></span>`;}
+
+function landingScreen(){
+  return `<div style="height:100%;background:${APP_BG};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:10px;">
+    <div style="width:54px;height:54px;background:${BLUE};border-radius:14px;display:flex;align-items:center;justify-content:center;">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="12" height="12" rx="3" fill="#93c5fd"/><rect x="17" y="3" width="12" height="12" rx="3" fill="#fde68a"/><rect x="3" y="17" width="12" height="12" rx="3" fill="#86efac"/><rect x="17" y="17" width="12" height="12" rx="3" fill="#fca5a5"/></svg>
+    </div>
+    <div style="font-size:20px;font-weight:800;color:${DARK};text-align:center;letter-spacing:-0.02em;"><span>Room</span><span style="color:${BLUE};">Ready</span></div>
+    <div style="font-size:9px;color:${GRAY};text-align:center;margin-bottom:4px;">Hotel operations, simplified</div>
+    <button style="width:100%;background:${BLUE};color:white;border:none;border-radius:24px;padding:10px;font-size:11px;font-weight:700;">Set Up My Hotel</button>
+    <button style="width:100%;background:white;color:${DARK};border:1px solid ${BORD};border-radius:24px;padding:10px;font-size:11px;font-weight:600;">I Have a Join Code</button>
+    <div style="font-size:9px;color:${GRAY};">Manager Login →</div>
+    <div style="font-size:7px;color:#94a3b8;position:absolute;bottom:10px;">Real-time room status for independent hotels</div>
+  </div>`;
+}
+
+function setupScreen(step, content){
+  const fill = step === 1 ? '33%' : step === 2 ? '66%' : '100%';
+  return `<div style="height:100%;background:white;padding:10px;overflow:hidden;">
+    <div style="font-size:9px;color:${GRAY};margin-bottom:4px;">← &nbsp; Step ${step} of 3</div>
+    <div style="background:${LGRAY};border-radius:3px;height:4px;margin-bottom:12px;overflow:hidden;"><div style="width:${fill};height:100%;background:${BLUE};border-radius:3px;"></div></div>
+    ${content}
+  </div>`;
+}
+
+function setup1(){
+  return setupScreen(1,`<div style="font-size:14px;font-weight:800;color:${DARK};text-align:center;margin-bottom:10px;">Tell us about your hotel</div>
+    <div style="font-size:8px;color:${DARK};font-weight:500;margin-bottom:3px;">Hotel name</div>
+    <input disabled placeholder="Seaside Inn" style="width:100%;border:1px solid ${BORD};border-radius:8px;padding:6px 8px;font-size:9px;color:${GRAY};box-sizing:border-box;margin-bottom:8px;background:white;">
+    <div style="font-size:10px;font-weight:700;color:${DARK};text-align:center;margin-bottom:6px;">Manager account</div>
+    <div style="font-size:8px;color:${DARK};font-weight:500;margin-bottom:2px;">Your name</div>
+    <input disabled placeholder="Alex Morgan" style="width:100%;border:1px solid ${BORD};border-radius:8px;padding:5px 8px;font-size:9px;box-sizing:border-box;margin-bottom:5px;">
+    <div style="font-size:8px;color:${DARK};font-weight:500;margin-bottom:2px;">Email</div>
+    <input disabled placeholder="you@hotel.com" style="width:100%;border:1px solid ${BORD};border-radius:8px;padding:5px 8px;font-size:9px;box-sizing:border-box;margin-bottom:8px;">
+    <button style="width:100%;background:#93c5fd;color:white;border:none;border-radius:24px;padding:8px;font-size:10px;font-weight:700;">Continue</button>`);
+}
+
+function setup2(){
+  return setupScreen(2,`<div style="font-size:14px;font-weight:800;color:${DARK};text-align:center;margin-bottom:4px;">Set up your rooms</div>
+    <div style="font-size:8px;color:${GRAY};text-align:center;margin-bottom:8px;">Add rooms floor by floor.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:3px;margin-bottom:4px;"><span style="font-size:7px;color:${GRAY};font-weight:600;">FLOOR</span><span style="font-size:7px;color:${GRAY};font-weight:600;">START #</span><span style="font-size:7px;color:${GRAY};font-weight:600;">COUNT</span><span></span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:3px;margin-bottom:3px;align-items:center;"><input disabled value="1" style="border:1px solid ${BORD};border-radius:6px;padding:5px;font-size:9px;text-align:center;"><input disabled value="101" style="border:1px solid ${BORD};border-radius:6px;padding:5px;font-size:9px;text-align:center;"><input disabled value="10" style="border:1px solid ${BORD};border-radius:6px;padding:5px;font-size:9px;text-align:center;"><span style="color:#ef4444;font-size:10px;">✕</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:3px;margin-bottom:6px;align-items:center;"><input disabled value="2" style="border:1px solid ${BORD};border-radius:6px;padding:5px;font-size:9px;text-align:center;"><input disabled value="201" style="border:1px solid ${BORD};border-radius:6px;padding:5px;font-size:9px;text-align:center;"><input disabled value="10" style="border:1px solid ${BORD};border-radius:6px;padding:5px;font-size:9px;text-align:center;"><span style="color:#ef4444;font-size:10px;">✕</span></div>
+    <div style="text-align:center;margin-bottom:6px;"><span style="font-size:8.5px;color:${BLUE};font-weight:500;">+ Add Floor</span></div>
+    <div style="font-size:7.5px;color:${GRAY};text-align:center;margin-bottom:8px;">Preview: 101, 102, 103… (20 total)</div>
+    <button style="width:100%;background:${BLUE};color:white;border:none;border-radius:24px;padding:8px;font-size:10px;font-weight:700;">Continue</button>`);
+}
+
+function hotelReady(){
+  return `<div style="height:100%;background:${APP_BG};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:8px;text-align:center;">
+    <div style="font-size:40px;">✅</div>
+    <div style="font-size:15px;font-weight:800;color:${DARK};">Your hotel is ready!</div>
+    <div style="font-size:9px;color:${GRAY};">The Wynd Inn</div>
+    <div style="background:white;border:1px solid ${BORD};border-radius:10px;padding:10px 16px;width:100%;margin-top:4px;">
+      <div style="font-size:7px;letter-spacing:0.1em;color:${GRAY};font-weight:600;margin-bottom:6px;">HOTEL JOIN CODE</div>
+      <div style="font-size:26px;font-weight:800;color:${BLUE};letter-spacing:8px;">4102</div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-top:8px;">
+        <button style="background:white;border:1px solid ${BORD};border-radius:14px;padding:4px 10px;font-size:8px;color:${DARK};">📋 Copy code</button>
+        <button style="background:${BLUE};border:none;border-radius:14px;padding:4px 10px;font-size:8px;color:white;">📤 Send code</button>
+      </div>
+    </div>
+    <button style="width:100%;background:${BLUE};color:white;border:none;border-radius:24px;padding:9px;font-size:10px;font-weight:700;margin-top:4px;">Go to Manager Dashboard →</button>
+  </div>`;
+}
+
+function roomGrid(highlight){
+  const rooms=[['101',highlight?'dirty-maintenance':'dirty-maintenance'],['204','clean'],['205','clean'],['206','clean'],['207','clean'],['208','clean'],['209','clean'],['210','clean'],['301','clean'],['302','clean'],['303','clean'],['304','clean']];
+  const cell=(n,s)=>{
+    const hasIssue=s.includes('maintenance');
+    const isClean=s==='clean';
+    return `<div style="background:white;border-radius:8px;padding:5px 4px;text-align:center;border:${hasIssue?'1.5px solid #fca5a5':'0.5px solid '+BORD};">
+      ${hasIssue?'<span style="font-size:7px;float:left;line-height:1;">🔴</span>':''}
+      <div style="font-size:10px;font-weight:700;color:${DARK};">${n}</div>
+      <div style="display:flex;justify-content:center;align-items:center;gap:2px;margin-top:2px;">${dot(isClean?'#16a34a':'#dc2626')}${hasIssue?'<span style="font-size:6px;color:#7c3aed;">M</span>':''}</div>
+    </div>`;
+  };
+  return `<div style="position:relative;height:100%;">
+    ${mgrHead()}
+    <div style="font-size:10px;font-weight:700;color:${DARK};text-align:center;padding:5px 0 0;">Property Overview</div>
+    ${stats(31,27,2,1)}
+    ${tabs(['🛏 Rooms','👥 Staff'],'🛏 Rooms')}
+    <div style="padding:0 8px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-size:9px;font-weight:700;color:${DARK};">All Rooms</span><span style="background:${BLUE};color:white;font-size:7px;padding:2px 7px;border-radius:10px;font-weight:600;">+ Room</span></div>
+    <div style="padding:0 8px;display:grid;grid-template-columns:repeat(4,1fr);gap:3px;">${rooms.map(([n,s])=>cell(n,s)).join('')}</div>
+    ${nav('rooms')}
+  </div>`;
+}
+
+function staffScreen(){
+  return `<div style="position:relative;height:100%;">
+    ${mgrHead()}
+    <div style="font-size:10px;font-weight:700;color:${DARK};text-align:center;padding:5px 0 0;">Property Overview</div>
+    ${stats(31,27,2,1)}
+    ${tabs(['🛏 Rooms','👥 Staff'],'👥 Staff')}
+    <div style="padding:0 8px;display:flex;flex-direction:column;gap:5px;">
+      <div style="background:white;border-radius:8px;padding:8px 9px;border:0.5px solid ${BORD};">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <div style="width:20px;height:20px;border-radius:50%;background:#e9d5ff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#7c3aed;">M</div>
+          <div style="flex:1;"><div style="font-size:10px;font-weight:600;color:${DARK};">Maria</div><span style="background:#f3e8ff;color:#7c3aed;font-size:7px;padding:1px 5px;border-radius:8px;">housekeeper</span></div>
+          <span style="font-size:7.5px;color:${BLUE};">Tap to assign →</span>
+        </div>
+        <div style="font-size:8px;color:${GRAY};margin-bottom:3px;">12 rooms · 9 done (75%)</div>
+        <div style="background:#e9d5ff;border-radius:3px;height:4px;overflow:hidden;"><div style="width:75%;height:100%;background:#7c3aed;border-radius:3px;"></div></div>
+      </div>
+      <div style="background:white;border-radius:8px;padding:8px 9px;border:0.5px solid ${BORD};">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <div style="width:20px;height:20px;border-radius:50%;background:#fecaca;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#dc2626;">J</div>
+          <div style="flex:1;"><div style="font-size:10px;font-weight:600;color:${DARK};">Jason</div><span style="background:#fee2e2;color:#dc2626;font-size:7px;padding:1px 5px;border-radius:8px;">engineer</span></div>
+          <span style="font-size:7.5px;color:${BLUE};">Tap to assign →</span>
+        </div>
+        <div style="font-size:8px;color:${GRAY};">0 open tickets</div>
+      </div>
+    </div>
+    ${nav('rooms')}
+  </div>`;
+}
+
+function issuesScreen(assigned){
+  return `<div style="position:relative;height:100%;background:${APP_BG};">
+    <div style="background:white;padding:7px 10px;border-bottom:0.5px solid ${BORD};">
+      <div style="font-size:9px;color:${DARK};margin-bottom:2px;">← &nbsp;<strong style="font-size:12px;">All Issues</strong></div>
+      <div style="font-size:8px;color:${GRAY};">1 open · 7 resolved</div>
+    </div>
+    <div style="padding:8px;">
+      <div style="background:#fff5f5;border:1.5px solid #fca5a5;border-radius:10px;padding:8px 9px;margin-bottom:6px;">
+        <div style="font-size:7px;color:${GRAY};font-weight:600;margin-bottom:2px;">ROOM 103</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;">
+          <div style="font-size:12px;font-weight:700;color:${DARK};">Cleaning</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">${badge('Open','#fee2e2','#dc2626')}${badge('High','#fee2e2','#dc2626')}</div>
+        </div>
+        <div style="font-size:7.5px;color:${GRAY};margin-bottom:4px;">Reported by <strong>Maria</strong> · 6/18/2026</div>
+        <div style="background:white;border-radius:6px;padding:5px 7px;font-size:8px;color:${DARK};margin-bottom:5px;">Dirty pizza</div>
+        <div style="background:#e2e8f0;border-radius:4px;width:36px;height:26px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;font-size:14px;">🍕</div>
+        <div style="font-size:7px;color:${GRAY};font-weight:600;margin-bottom:3px;text-align:center;">ASSIGN TO ENGINEER</div>
+        <div style="background:white;border:1px solid ${BORD};border-radius:6px;padding:4px 7px;font-size:8.5px;color:${DARK};margin-bottom:6px;display:flex;justify-content:space-between;"><span>${assigned?'Jason':''}</span><span>▾</span></div>
+        <div style="display:flex;gap:4px;">
+          <button style="flex:1;background:#f59e0b;color:white;border:none;border-radius:18px;padding:5px;font-size:8px;font-weight:600;">▶ Start</button>
+          <button style="flex:1;background:#16a34a;color:white;border:none;border-radius:18px;padding:5px;font-size:8px;font-weight:600;">✓ Done</button>
+          <button style="flex:1;background:white;color:${DARK};border:1px solid ${BORD};border-radius:18px;padding:5px;font-size:8px;">+ Note</button>
+        </div>
+      </div>
+      ${['Room 104 · Maintenance','Room 107 · Maintenance','Room 103 · HVAC'].map(t=>`<div style="background:#f0fdf4;border:0.5px solid #86efac;border-radius:7px;padding:5px 8px;margin-bottom:3px;font-size:8px;color:#15803d;font-weight:500;">✓ ${t} &nbsp;<span style="font-weight:400;color:#6b7280;">Resolved by Nathaniel</span></div>`).join('')}
+    </div>
+    ${nav('issues')}
+  </div>`;
+}
+
+function hkScreen(){
+  const rooms=[{n:'101',s:'dirty',g:'John Smith',urgent:true},{n:'102',s:'dirty',g:'Mike Chen',urgent:false},{n:'103',s:'maintenance',g:'Floor 1',urgent:false},{n:'104',s:'clean',g:'Floor 1',urgent:false},{n:'105',s:'clean',g:'Floor 1',urgent:false}];
+  const sBadge=(s)=>s==='dirty'?badge('Dirty',DIRTY_BG,DIRTY_T):s==='clean'?badge('Clean',CLEAN_BG,CLEAN_T):badge('Maintenance',MAINT_BG,MAINT_T);
+  return `<div style="position:relative;height:100%;background:${APP_BG};">
+    <div style="background:white;padding:7px 10px;border-bottom:0.5px solid ${BORD};display:flex;justify-content:space-between;align-items:center;">
+      <div><div style="font-size:12px;font-weight:700;color:${DARK};">My Rooms</div><div style="font-size:7.5px;color:${GRAY};display:flex;align-items:center;gap:4px;">Maria · Housekeeper <span style="background:#fee2e2;color:#dc2626;font-size:6.5px;padding:1px 5px;border-radius:8px;font-weight:600;">🔴 1 urgent</span></div></div>
+      <div style="font-size:9px;color:${GRAY};">Log Out</div>
+    </div>
+    ${tabs(['🛏 Rooms','📅 Today','📋 History'],'🛏 Rooms')}
+    <div style="padding:0 8px;display:flex;flex-direction:column;gap:4px;overflow:hidden;">
+      ${rooms.map(r=>`<div style="background:white;border-radius:8px;padding:7px 9px;border:${r.urgent?'1.5px solid #fca5a5':r.s==='maintenance'?'1px solid #fde68a':'0.5px solid '+BORD};">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><div style="font-size:10px;font-weight:700;color:${DARK};display:flex;align-items:center;gap:4px;">Room ${r.n} ${r.urgent?'<span style="background:#dc2626;color:white;font-size:6px;padding:1px 4px;border-radius:6px;font-weight:700;">URGENT</span>':''}</div><div style="font-size:7.5px;color:${GRAY};">${r.g}</div></div>
+          ${sBadge(r.s)}
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function engineerScreen(){
+  return `<div style="position:relative;height:100%;background:${APP_BG};">
+    <div style="background:white;padding:7px 10px;border-bottom:0.5px solid ${BORD};display:flex;justify-content:space-between;align-items:center;">
+      <div><div style="font-size:12px;font-weight:700;color:${DARK};">My Tickets</div><div style="font-size:7.5px;color:${GRAY};display:flex;align-items:center;gap:4px;">Jason · Engineer ${badge('1 high','#fee2e2','#dc2626')} ${badge('1 open','#fef3c7','#b45309')}</div></div>
+      <div style="font-size:9px;color:${GRAY};">Log Out</div>
+    </div>
+    ${tabs(['🔧 Tickets','📅 Today','📋 History'],'📅 Today')}
+    <div style="padding:0 8px;">
+      <div style="font-size:7.5px;color:#dc2626;font-weight:700;text-align:center;margin-bottom:5px;">🔴 HIGH PRIORITY TICKETS</div>
+      <div style="background:#fff5f5;border:1.5px solid #fca5a5;border-radius:10px;padding:8px 9px;">
+        <div style="font-size:7px;color:${GRAY};font-weight:600;margin-bottom:2px;">ROOM 103</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+          <div style="font-size:12px;font-weight:700;color:${DARK};">Cleaning</div>
+          <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end;">${badge('Open','#fee2e2','#dc2626')}${badge('High','#fee2e2','#dc2626')}</div>
+        </div>
+        <div style="font-size:7.5px;color:${GRAY};margin-bottom:4px;">Reported by <strong>Maria</strong> · 6/18/2026</div>
+        <div style="background:white;border-radius:6px;padding:4px 7px;font-size:8px;color:${DARK};margin-bottom:4px;">Dirty pizza</div>
+        <div style="background:#e2e8f0;border-radius:4px;width:32px;height:24px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;font-size:12px;">🍕</div>
+        <div style="display:flex;gap:4px;">
+          <button style="flex:1;background:#f59e0b;color:white;border:none;border-radius:16px;padding:5px;font-size:8px;font-weight:600;">▶ Start</button>
+          <button style="flex:1;background:#16a34a;color:white;border:none;border-radius:16px;padding:5px;font-size:8px;font-weight:600;">✓ Done</button>
+          <button style="flex:1;background:white;color:${DARK};border:1px solid ${BORD};border-radius:16px;padding:5px;font-size:8px;">+ Note</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function storageScreen(){
+  return `<div style="position:relative;height:100%;background:${APP_BG};">
+    <div style="background:white;padding:7px 10px;border-bottom:0.5px solid ${BORD};display:flex;justify-content:space-between;align-items:center;">
+      <div><div style="font-size:9px;color:${DARK};">←</div><div style="font-size:13px;font-weight:800;color:${DARK};">Storage</div></div>
+      <button style="background:${BLUE};color:white;border:none;border-radius:14px;padding:4px 9px;font-size:8px;font-weight:600;">+ Add Room</button>
+    </div>
+    <div style="padding:8px;">
+      <div style="font-size:8.5px;color:#b45309;font-weight:500;margin-bottom:6px;">⚠️ 1 item running low</div>
+      <div style="background:white;border-radius:10px;padding:9px;border:0.5px solid ${BORD};">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><span style="font-size:10px;font-weight:700;color:${DARK};">Storage Room 1</span>${badge('⚠️ 1 low',MAINT_BG,MAINT_T)}</div>
+        <div style="font-size:7.5px;color:${GRAY};margin-bottom:7px;">Floor 1 · 1 items</div>
+        <div style="background:#fef3c7;border-radius:8px;padding:7px 9px;display:flex;align-items:center;justify-content:space-between;">
+          <div><span style="font-size:10px;font-weight:600;color:${DARK};">Soap</span> &nbsp;${badge('Low',MAINT_BG,MAINT_T)}<div style="font-size:7px;color:${GRAY};margin-top:1px;">Alert below 5</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><button style="width:18px;height:18px;border-radius:50%;background:white;border:1px solid ${BORD};font-size:10px;display:flex;align-items:center;justify-content:center;">−</button><span style="font-size:12px;font-weight:700;color:${DARK};">5</span><button style="width:18px;height:18px;border-radius:50%;background:${BLUE};border:none;color:white;font-size:10px;display:flex;align-items:center;justify-content:center;">+</button></div>
+        </div>
+      </div>
+    </div>
+    ${nav('storage')}
+  </div>`;
+}
+
+function logScreen(){
+  const events=[{ic:'🔄',t:'Cleaning Room 103 reopened',by:'Nathaniel',when:'just now'},{ic:'✓',t:'Resolved: Cleaning in Room 103',by:'Jason',when:'4h ago'},{ic:'🔧',t:'Cleaning Room 103 → Jason',by:'Nathaniel',when:'4h ago'},{ic:'⚠️',t:'Issue reported: Cleaning in Room 103',by:'Maria',when:'4h ago'},{ic:'📦',t:'Soap hit low stock (5 left)',by:'System',when:'4h ago'},{ic:'✓',t:'Maintenance Room 104 resolved',by:'Nathaniel',when:'4h ago'}];
+  return `<div style="position:relative;height:100%;background:${APP_BG};">
+    <div style="background:white;padding:7px 10px 5px;border-bottom:0.5px solid ${BORD};">
+      <div style="font-size:9px;color:${DARK};">← &nbsp;<strong style="font-size:13px;">Activity Log</strong></div>
+      <div style="font-size:7.5px;color:${GRAY};">74 events recorded</div>
+    </div>
+    <div style="display:flex;gap:3px;padding:5px 8px;overflow-x:auto;flex-wrap:nowrap;">
+      ${['All','Rooms','Issues','Resolved','Staff'].map((f,i)=>`<span style="background:${i===0?DARK:LGRAY};color:${i===0?white:GRAY};font-size:7px;padding:3px 7px;border-radius:10px;white-space:nowrap;font-weight:${i===0?'600':'400'};">${i===0?'■ ':f==='Rooms'?'📋 ':f==='Issues'?'⚠️ ':f==='Resolved'?'✓ ':'👤 '}${f}</span>`).join('')}
+    </div>
+    <div style="padding:0 8px;overflow:hidden;">
+      ${events.map(e=>`<div style="background:white;border-bottom:0.5px solid ${BORD};padding:6px 0;display:flex;align-items:flex-start;gap:6px;"><span style="font-size:9px;margin-top:1px;flex-shrink:0;">${e.ic}</span><div style="flex:1;"><div style="font-size:8.5px;color:${DARK};font-weight:500;">${e.t}</div><div style="font-size:7px;color:${GRAY};">${e.by} · ${e.when}</div></div></div>`).join('')}
+    </div>
+    ${nav('log')}
+  </div>`;
+}
+
+function ctaScreen(){
+  return `<div style="height:100%;background:${APP_BG};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;gap:9px;text-align:center;">
+    <div style="width:52px;height:52px;background:${BLUE};border-radius:14px;display:flex;align-items:center;justify-content:center;">
+      <svg width="30" height="30" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="12" height="12" rx="3" fill="#93c5fd"/><rect x="17" y="3" width="12" height="12" rx="3" fill="#fde68a"/><rect x="3" y="17" width="12" height="12" rx="3" fill="#86efac"/><rect x="17" y="17" width="12" height="12" rx="3" fill="#fca5a5"/></svg>
+    </div>
+    <div style="font-size:18px;font-weight:800;color:${DARK};letter-spacing:-0.02em;"><span>Room</span><span style="color:${BLUE};">Ready</span></div>
+    <div style="background:white;border:1px solid ${BORD};border-radius:8px;padding:5px 14px;"><div style="font-size:9px;color:${BLUE};font-weight:500;letter-spacing:0.02em;">roomready.vercel.app</div></div>
+    <div style="width:100%;display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+      ${[['✅','No app download — works on any phone'],['📊','Live room dashboard for managers'],['🔔','Push alerts for urgent issues'],['📦','Storage tracking with low-stock alerts'],['📋','Full activity log — every action recorded']].map(([ic,t])=>`<div style="background:white;border-radius:7px;padding:5px 8px;font-size:8px;color:${DARK};display:flex;align-items:center;gap:5px;border:0.5px solid ${BORD};text-align:left;">${ic} ${t}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
+const SCENES=[
+  {dur:5000,tag:'roomready.vercel.app',head:'Hotel operations, simplified.',sub:'The ops platform built for independent hotels, B&Bs, and boutique properties.',screen:landingScreen},
+  {dur:6000,tag:'Setup — 2 minutes',head:'Set up in 3 steps.',sub:'Name your hotel, add your rooms floor by floor, then add staff. Done.',screen:setup1,update:{at:2800,fn:setup2}},
+  {dur:5000,tag:'Ready to go',head:'Staff join with a 4-digit code.',sub:'No accounts, no app store. Share the code — staff are in instantly.',screen:hotelReady},
+  {dur:9000,tag:'Manager dashboard',head:'See every room, live.',sub:'Hotel Indigo: 31 rooms, real-time status. Room 101 flagged — manager sees it instantly.',screen:()=>roomGrid(false),update:{at:4500,fn:()=>roomGrid(true)}},
+  {dur:7000,tag:'Staff overview',head:'Track progress across your whole team.',sub:'Maria: 9 of 12 rooms done (75%). Jason: 0 open tickets. All live.',screen:staffScreen},
+  {dur:8000,tag:'Issues',head:'Flag issues with a photo.',sub:'Room 103 Cleaning — reported by Maria with a photo, assigned to Jason. Start → Done.',screen:()=>issuesScreen(false),update:{at:3500,fn:()=>issuesScreen(true)}},
+  {dur:7000,tag:'Housekeeper view',head:'Staff see exactly their rooms.',sub:'Urgent rooms surface to the top. Status updates propagate to the manager instantly.',screen:hkScreen},
+  {dur:6000,tag:'Engineer view',head:'Engineers get their own queue.',sub:'High-priority tickets, photos, and one-tap updates. Jason always knows what\'s next.',screen:engineerScreen},
+  {dur:6000,tag:'Storage',head:'Track supplies. Never run out.',sub:'Soap hit 5 — low stock alert fires automatically. Manager is notified.',screen:storageScreen},
+  {dur:6000,tag:'Activity log',head:'Every action, recorded.',sub:'74 events: who did what, when. Filter by rooms, issues, staff, or resolved.',screen:logScreen},
+  {dur:7000,tag:'Try it now',head:'roomready.vercel.app',sub:'Any phone. No download. Works today.',screen:ctaScreen},
+];
+
+let idx=0,raf=null,upTimer=null,startTs=null;
+function setScene(i){
+  idx=i;const s=SCENES[i];
+  const tag=document.getElementById('rr-tag'),head=document.getElementById('rr-head'),sub=document.getElementById('rr-sub'),scr=document.getElementById('rr-screen'),lbl=document.getElementById('rr-lbl');
+  tag.style.opacity=head.style.opacity=sub.style.opacity=scr.style.opacity='0';
+  clearTimeout(upTimer);
+  setTimeout(()=>{
+    tag.textContent=s.tag;head.textContent=s.head;sub.textContent=s.sub;
+    scr.innerHTML=s.screen();lbl.textContent=(i+1)+' / '+SCENES.length;
+    tag.style.opacity=head.style.opacity=sub.style.opacity=scr.style.opacity='1';
+    if(s.update)upTimer=setTimeout(()=>{scr.style.opacity='0';setTimeout(()=>{scr.innerHTML=s.update.fn();scr.style.opacity='1';},320);},s.update.at);
+  },380);
+}
+function rrPlay(){
+  if(raf)cancelAnimationFrame(raf);clearTimeout(upTimer);
+  idx=0;startTs=null;setScene(0);
+  const tot=SCENES.reduce((a,s)=>a+s.dur,0);
+  function tick(ts){
+    if(!startTs)startTs=ts;const el=ts-startTs;
+    document.getElementById('rr-prog').style.width=Math.min(el/tot*100,100)+'%';
+    let cum=0;for(let i=0;i<SCENES.length;i++){cum+=SCENES[i].dur;if(el<cum){if(i!==idx)setScene(i);break;}}
+    if(el<tot)raf=requestAnimationFrame(tick);
+  }
+  raf=requestAnimationFrame(tick);
+}
+rrPlay();
+</script>
